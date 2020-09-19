@@ -1,0 +1,41 @@
+name: Pull Request
+
+on: [ pull_request ]
+
+env:
+  DOCKER_IMAGE_USER: cyberryteam
+  DOCKER_IMAGE_NAME: normez-docker
+
+jobs:
+
+  docker:
+    name: Docker
+    runs-on: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          docker build . \
+            -t $DOCKER_IMAGE_USER/$DOCKER_IMAGE_NAME:latest
+
+      - name: Test
+        run: |
+          docker run --rm -v "$PWD:/files" $DOCKER_IMAGE_USER/$DOCKER_IMAGE_NAME:latest
+
+  super-linter:
+    name: Super-Linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Lint
+        uses: github/super-linter@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILTER_REGEX_EXCLUDE: .*.github/.*
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_DOCKERFILE_HADOLINT: true
+          VALIDATE_MD: true

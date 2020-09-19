@@ -1,8 +1,8 @@
-name: Docker
+name: Push
 
 on:
   push:
-    tags: ['v*']
+    tags: [ 'v*' ]
 
 env:
   DOCKER_IMAGE_USER: cyberryteam
@@ -11,7 +11,7 @@ env:
 jobs:
 
   docker:
-    runs-on: [ubuntu-latest]
+    runs-on: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
@@ -24,9 +24,9 @@ jobs:
       - name: Get version
         id: version
         run: |
-          git fetch --prune --tags --unshallow
           HASH="$(curl -s https://api.github.com/repos/ronanboiteau/NormEZ/commits/master | grep -m 1 -oP '(?<=\"sha\": \").{0,7}(?<!\")')"
-          TAG="$(git describe --tags $(git rev-list --tags --max-count=1) | grep -oP '(?<=^v).+')"
+          TAG="${GITHUB_REF#refs/tags/}"
+          TAG="$(echo $TAG | grep -oP '(?<=^v).+')"
           MAJOR="$(echo $TAG | grep -oP '^\d+')"
           MINOR="$(echo $TAG | grep -oP '^\d+.\d+')"
           echo "::set-output name=hash::$HASH"
@@ -44,10 +44,6 @@ jobs:
             -t $DOCKER_IMAGE_USER/$DOCKER_IMAGE_NAME:${{ steps.version.outputs.tag }}-${{ steps.version.outputs.hash }} \
             --build-arg IMAGE_CREATION=$(date --iso-8601=seconds) \
             --build-arg IMAGE_VERSION=${{ steps.version.outputs.tag }}-${{ steps.version.outputs.hash }}
-
-      - name: Test
-        run: |
-          docker run --rm -v "$PWD:/files" $DOCKER_IMAGE_USER/$DOCKER_IMAGE_NAME:${{ steps.version.outputs.tag }}-${{ steps.version.outputs.hash }}
 
       - name: Push
         run: |
